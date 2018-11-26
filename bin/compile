@@ -24,19 +24,19 @@ fi
 API="https://sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}"
 
 # Create a release
-echo "-----> Creating Sentry release ${SOURCE_VERSION} for organization '${SENTRY_ORG}' in project '${SENTRY_PROJECT}'"
+echo "-----> Creating Sentry release ${HEROKU_SLUG_COMMIT} for organization '${SENTRY_ORG}' in project '${SENTRY_PROJECT}'"
 
 curl -sSf "${API}/releases/" \
   -X POST \
   -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
   -H 'Content-Type: application/json' \
-  -d "{\"version\": \"${SOURCE_VERSION}\"}" \
+  -d "{\"version\": \"${HEROKU_SLUG_COMMIT}\"}" \
   >/dev/null
 
 # Retrieve files
 files=$(mktemp)
 echo "       Retrieving existing files to $files"
-curl -sSf "${API}/releases/${SOURCE_VERSION}/files/" \
+curl -sSf "${API}/releases/${HEROKU_SLUG_COMMIT}/files/" \
      -X GET \
      -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
      > "$files"
@@ -60,7 +60,7 @@ for map in $(find . -name '*.js.map' -not -path './node_modules/*' -not -path '.
 
     if [[ "${res[0]}" == "" ]]; then
         echo "       Uploading ${map} to Sentry"
-        curl -sSf "${API}/releases/${SOURCE_VERSION}/files/" \
+        curl -sSf "${API}/releases/${HEROKU_SLUG_COMMIT}/files/" \
              -X POST \
              -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
              -F file=@"${map}" \
@@ -69,11 +69,11 @@ for map in $(find . -name '*.js.map' -not -path './node_modules/*' -not -path '.
 
     elif [[ "${res[1]}" != "${sum}" ]]; then
         echo "       Updating ${map} on Sentry"
-        curl -sSf "${API}/releases/${SOURCE_VERSION}/files/${res[0]}/" \
+        curl -sSf "${API}/releases/${HEROKU_SLUG_COMMIT}/files/${res[0]}/" \
              -X DELETE \
              -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
              >/dev/null
-        curl -sSf "${API}/releases/${SOURCE_VERSION}/files/" \
+        curl -sSf "${API}/releases/${HEROKU_SLUG_COMMIT}/files/" \
              -X POST \
              -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
              -F file=@"${map}" \
